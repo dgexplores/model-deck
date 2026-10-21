@@ -1,8 +1,12 @@
 # Model Deck
 
+**Live demo:** [dg-model-deck.onrender.com](https://dg-model-deck.onrender.com) · [API reference](https://dg-model-deck.onrender.com/docs)
+
 **An experiment-to-endpoint workbench: train, compare, version, and serve three real classifiers.**
 
 Model Deck makes the delivery side of machine learning visible. A reviewer can inspect validation and test scores, choose a model version, edit a sample, and call the same inference endpoint used by the interface. No provider key is needed.
+
+![Model workbench](docs/model-workbench.png)
 
 ## Why build this?
 
