@@ -1,6 +1,6 @@
 # Model Deck
 
-**Build status:** Local rebuild with tested training, inference, CSV upload and drift monitoring. This version is not deployed. Previous similarly named hosted applications do not demonstrate this rebuild.
+**Build status:** independent rebuild with training, inference, CSV upload and drift monitoring. Controlled evaluations and their limits are documented below.
 
 **An experiment-to-endpoint workbench: train, compare, version, and serve three real classifiers.**
 
@@ -126,3 +126,7 @@ See the [upstream project study](docs/upstream-study.md) for the original archit
 ## Comparison boundary
 
 This rebuild adds locally tested training provenance, CSV serving and statistical monitoring to the earlier independent implementation. The upstream SeamlessML examples target AWS serverless inference; this project has not demonstrated superior cold-start latency, cost, throughput or scalability. No side-by-side runtime benchmark or verified AWS deployment has been performed. Its independently measured scope is the included Wine model task and explicitly synthetic drift scenarios.
+
+## Demo and interview walkthrough
+
+[Open the demo](https://dg-model-deck.onrender.com) · [Five-minute walkthrough](docs/DEMO.md). Free hosting can sleep; instance-local demo records may reset. External-provider and Jira modes are disabled unless configured and authorized.
