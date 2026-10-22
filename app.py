@@ -1,5 +1,7 @@
 """A bounded model-serving workbench with measured, versioned predictions."""
 from contextlib import asynccontextmanager
+import csv
+import io
 import hashlib
 import json
 import math
@@ -10,13 +12,14 @@ import threading
 import time
 
 import joblib
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator
 from sklearn.datasets import load_wine
 
 from train import ARTIFACTS, ROOT, train
+from monitoring import drift_report
 
 
 @asynccontextmanager
@@ -32,6 +35,7 @@ async def lifespan(application):
         # Only this project's generated, hash-checked build artifacts are loaded.
         models[name] = joblib.load(path)
     application.state.manifest, application.state.models = manifest, models
+    application.state.reference = load_wine().data[manifest["split"]["train_indices"]]
     data_dir = Path(os.getenv("DATA_DIR", "/tmp/model-deck"))
     data_dir.mkdir(parents=True, exist_ok=True)
     connection = sqlite3.connect(data_dir / "metrics.sqlite", check_same_thread=False)
@@ -105,3 +109,60 @@ def metrics():
         rows = app.state.db.execute("SELECT model, rows, elapsed_ms FROM calls ORDER BY rowid DESC LIMIT 2000").fetchall()
     latency = sorted(row[2] for row in rows)
     return {"requests":len(rows),"samples":sum(row[1] for row in rows),"latency_ms_p95":round(latency[max(0,math.ceil(len(latency)*.95)-1)],3) if latency else None,"scope":"Latest 2000 requests in this instance; free hosting storage is ephemeral. Inference time excludes network latency."}
+
+
+class DriftRequest(PredictionRequest):
+    rows: list[list[float]] = Field(min_length=30, max_length=1000)
+
+
+@app.post("/api/drift")
+def monitor(payload: DriftRequest):
+    """Compare at least 30 rows against the fixed training reference."""
+    return drift_report(payload.rows, app.state.reference, app.state.manifest["feature_names"])
+
+
+async def parse_csv_request(request: Request, model_id: str = "champion"):
+    """Validate a small UTF-8 CSV upload before invoking batch inference."""
+    if request.headers.get("content-type", "").split(";")[0].strip() not in ("text/csv", "text/plain"):
+        raise HTTPException(415, "Send UTF-8 CSV with Content-Type text/csv or text/plain.")
+    body = bytearray()
+    async for chunk in request.stream():
+        if len(body) + len(chunk) > 131072:
+            raise HTTPException(413, "CSV exceeds the 128 KiB upload limit.")
+        body.extend(chunk)
+    try:
+        text = body.decode("utf-8-sig")
+        reader = csv.reader(io.StringIO(text), strict=True)
+        header = next(reader)
+        expected = app.state.manifest["feature_names"]
+        if len(header) != 13 or len(set(header)) != 13 or set(header) != set(expected):
+            raise HTTPException(422, "CSV header must contain the 13 registry feature names exactly once. Column order may vary.")
+        order = [header.index(name) for name in expected]
+        rows = []
+        for row in reader:
+            if not row:
+                continue
+            if len(row) != 13:
+                raise HTTPException(422, "Every CSV record must contain exactly 13 measurements.")
+            rows.append([float(row[index]) for index in order])
+            if len(rows) > 100:
+                raise HTTPException(422, "CSV accepts at most 100 data records.")
+        payload = PredictionRequest(model_id=model_id, rows=rows)
+    except (UnicodeError, csv.Error, StopIteration, ValueError) as error:
+        raise HTTPException(422, "Invalid CSV. Supply a header and 1–100 rows of finite numeric measurements.") from error
+    return payload
+
+
+@app.post("/api/predict-csv")
+async def predict_csv(request: Request, model_id: str = "champion"):
+    payload = await parse_csv_request(request, model_id)
+    result = predict(payload)
+    return {**result, "input_rows": len(payload.rows), "feature_order": app.state.manifest["feature_names"]}
+
+
+@app.post("/api/drift-csv")
+async def monitor_csv(request: Request):
+    payload = await parse_csv_request(request)
+    if len(payload.rows) < 30:
+        raise HTTPException(422, "Drift checks require at least 30 measurements.")
+    return drift_report(payload.rows, app.state.reference, app.state.manifest["feature_names"])

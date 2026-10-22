@@ -55,8 +55,10 @@ def train(output=ARTIFACTS):
         })
     baseline = DummyClassifier(strategy="most_frequent").fit(dataset.data[fit_idx], dataset.target[fit_idx])
     manifest = {
-        "schema_version": 1, "dataset": "UCI Wine recognition via sklearn.datasets.load_wine (178 observations, 3 cultivars)",
+        "schema_version": 2, "dataset": "UCI Wine recognition via sklearn.datasets.load_wine (178 observations, 3 cultivars)",
         "dataset_sha256": hashlib.sha256(dataset.data.tobytes()+dataset.target.tobytes()).hexdigest(),
+        "provenance": {"source_sha256": {name: hashlib.sha256((ROOT / name).read_bytes()).hexdigest() for name in ("train.py", "app.py", "monitoring.py")}, "selection": "validation macro F1, deterministic candidate insertion-order tie break", "refit": "train plus validation after selection", "test_policy": "reported only after selection; never used to pick champion"},
+        "monitoring_reference": {"partition": "train_indices", "rows": len(train_idx), "feature_mean": dataset.data[train_idx].mean(axis=0).tolist(), "feature_std": dataset.data[train_idx].std(axis=0, ddof=1).tolist()},
         "feature_names": dataset.feature_names, "classes": dataset.target_names.tolist(),
         "champion": champion, "models": reports,
         "split": {"seed_test":42,"seed_validation":43,"train_indices":train_idx.tolist(),"validation_indices":val_idx.tolist(),"test_indices":test_idx.tolist()},
