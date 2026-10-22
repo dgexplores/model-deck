@@ -97,3 +97,7 @@ An original implementation for Deepak Gangwar's portfolio, developed with AI ass
 Demonstrated skills: Python, REST APIs, software design, Machine Learning, a small feedforward neural network, model selection, data processing, MLOps foundations, Git/CI, testing, and technical documentation. No enterprise users, business savings, or production reliability figures are claimed.
 
 Dataset attribution: UCI Wine recognition, distributed through scikit-learn; see `sklearn.datasets.load_wine().DESCR` for the original dataset description and references. Source code: MIT [license](LICENSE).
+
+## Original project study
+
+See the [upstream project study](docs/upstream-study.md) for the original architecture, authorship, setup requirements and limitations. It describes a separate upstream reference, not this repository’s deployed application.
