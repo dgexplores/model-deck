@@ -13,7 +13,7 @@ import time
 
 import joblib
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator
 from sklearn.datasets import load_wine
@@ -48,6 +48,19 @@ async def lifespan(application):
 
 app = FastAPI(title="Model Deck", description="Versioned inference with reproducible model selection and measured latency.", lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
+
+@app.middleware("http")
+async def bound_request_body(request: Request, call_next):
+    if request.method == "POST":
+        limit = 131072 if request.url.path.endswith("-csv") else 524288
+        body = bytearray()
+        async for chunk in request.stream():
+            if len(body) + len(chunk) > limit:
+                return JSONResponse({"detail": "Request body exceeds the allowed size."}, status_code=413)
+            body.extend(chunk)
+        request._body = bytes(body)
+    return await call_next(request)
+
 
 
 class PredictionRequest(BaseModel):

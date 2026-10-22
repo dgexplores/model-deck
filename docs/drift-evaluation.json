@@ -115,7 +115,7 @@
   ],
   "source_sha256": {
     "train.py": "05d75a1e2eb07a9e0e8ad1610be82599eae35694e807d931cf64b591a3a31079",
-    "app.py": "b8b12bf65a42fa41791be2231c77afe62a3b4c7ac01c76151419cf04343628b9",
+    "app.py": "d208ad5e211048a4ba84da47e858095f144c68171b04899c3ca98b8f73381712",
     "monitoring.py": "94efcf052b65f46ac7da46bf337023ec47a10516f9a3cd22f7542e03e71b4557"
   },
   "limitations": "Synthetic stress check of one detector configuration, not a production false-alarm rate or evidence of superiority to SeamlessML. Repeated samples are drawn with replacement from the finite training reference. Large mean shifts are easy; joint-only changes, label shift and concept drift are not measured."

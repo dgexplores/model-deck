@@ -119,6 +119,7 @@ def test_csv_rejects_bad_uploads_before_inference(tmp_path, monkeypatch):
         assert client.post('/api/predict-csv', content=b'\xff', headers=headers).status_code == 422
         assert client.post('/api/predict-csv', content='a' * 131073, headers=headers).status_code == 413
         assert client.post('/api/predict-csv', content='{}', headers={'Content-Type': 'application/json'}).status_code == 415
+        assert client.post('/api/drift', content='x' * 524289, headers={'Content-Type': 'application/json'}).status_code == 413
         assert client.get('/api/metrics').json()['requests'] == 0
         data = csv_data(names, [row] * 29)
         assert client.post('/api/drift-csv', content=data, headers=headers).status_code == 422

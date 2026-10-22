@@ -109,7 +109,7 @@ docker build -t model-deck .
 docker run --rm -p 8000:8000 -e PORT=8000 model-deck
 ```
 
-Seven tests cover disjoint partitions and validation-only selection; measured baseline comparison; source and training-reference provenance; real versioned prediction contracts; targeted drift localization and null behavior; batch-size/shape rejection; quoted/reordered/BOM CSV parity with JSON inference; and bounded upload/error handling without inference side effects. The CSV rejection test includes empty input, missing/duplicate columns, ragged records, oversized batches, invalid encoding, NaN, infinity, formula-like text, out-of-bound magnitudes, oversized bodies and unsupported media types. CI runs tests and builds the container. `render.yaml` describes a free Python service. A live URL should be added only after successful remote deployment and smoke checks.
+Seven tests cover disjoint partitions and validation-only selection; measured baseline comparison; source and training-reference provenance; real versioned prediction contracts; targeted drift localization and null behavior; batch-size/shape rejection; quoted/reordered/BOM CSV parity with JSON inference; and bounded upload/error handling without inference side effects. JSON request bodies are capped at 512 KiB and CSV at 128 KiB before parsing. The CSV rejection test includes empty input, missing/duplicate columns, ragged records, oversized batches, invalid encoding, NaN, infinity, formula-like text, out-of-bound magnitudes, oversized bodies and unsupported media types. CI runs tests and builds the container. `render.yaml` describes a free Python service. A live URL should be added only after successful remote deployment and smoke checks.
 
 ## Ownership, inspiration, and skills
 
